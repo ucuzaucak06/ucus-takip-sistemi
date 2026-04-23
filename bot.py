@@ -15,7 +15,7 @@ from telegram.ext import (
 # AYARLAR — sadece buraya yaz
 # ─────────────────────────────────────────────
 TELEGRAM_TOKEN   = "8686459551:AAFZP4JWH_tp1ggE7CHMlmuAruQu3ethNfA"
-TELEGRAM_CHAT_ID = "BURAYA_CHAT_ID_YAZ"   # /chatid komutuyla öğreneceksin
+TELEGRAM_CHAT_ID = "529241059"
 SKYSCANNER_KEY   = "uc643373167396223405725428773537"
 TARAMA_SAATI     = 7   # Her sabah saat 07:00
 # ─────────────────────────────────────────────
