@@ -1,5 +1,4 @@
 python-telegram-bot[job-queue]==20.7
 requests==2.31.0
-gf-search
 fast-flights
 APScheduler==3.10.4
