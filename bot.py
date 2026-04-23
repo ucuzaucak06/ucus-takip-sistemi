@@ -314,31 +314,72 @@ async def tum_rotalari_tara(bot: Bot):
     if bulunan_rotalar:
         bulunan_sirali = sorted(bulunan_rotalar, key=lambda x: x["min_eur"])
 
-        ozet = f"☀️ *Günlük Uçuş Raporu* — {bugun.strftime('%d.%m.%Y')}\n"
-        ozet += f"🕖 Saat 07:00 taraması tamamlandı\n"
-        ozet += "━━━━━━━━━━━━━━━━━━━━\n\n"
-        ozet += f"✅ *{len(bulunan_rotalar)} rotada fiyat bulundu:*\n\n"
-
-        for r in bulunan_sirali[:20]:  # İlk 20 en ucuz rota
-            ozet += f"✈️ `{r['rota']}` — *{r['min_eur']:.0f} EUR* ({r['min_ay']})\n"
-
-        if len(bulunan_sirali) > 20:
-            ozet += f"\n_...ve {len(bulunan_sirali) - 20} rota daha_\n"
-
-        if bulunamayan_rotalar:
-            ozet += f"\n❌ *Fiyat bulunamayan {len(bulunamayan_rotalar)} rota:*\n"
-            ozet += ", ".join(bulunamayan_rotalar[:10])
-
+        # Başlık mesajı
+        baslik = f"☀️ *Günlük Uçuş Raporu* — {bugun.strftime('%d.%m.%Y')}\n"
+        baslik += f"🕖 Saat 07:00 taraması tamamlandı\n"
+        baslik += "━━━━━━━━━━━━━━━━━━━━\n"
+        baslik += f"✅ *{len(bulunan_rotalar)} rotada fiyat bulundu*"
         if dusen_rotalar:
-            ozet += f"\n\n📉 *Bugün {len(dusen_rotalar)} rotada fiyat düştü!*"
-
-        ozet += f"\n\n_Toplam {len(ROTALAR)} rota × 12 ay tarandı_"
+            baslik += f" | 📉 *{len(dusen_rotalar)} rotada düşüş var!*"
+        baslik += f"\n_Toplam {len(ROTALAR)} rota × 12 ay tarandı_"
 
         await bot.send_message(
             chat_id=TELEGRAM_CHAT_ID,
-            text=ozet,
+            text=baslik,
             parse_mode="Markdown"
         )
+        await asyncio.sleep(0.3)
+
+        # Düşen rotaları set olarak tut (hızlı arama için)
+        dusen_rota_set = {f"{d['rota']}" for d in dusen_rotalar}
+        dusen_rota_bilgi = {d['rota']: d for d in dusen_rotalar}
+
+        # Düşen rotalar önce, sonra diğerleri
+        dusenler = [r for r in bulunan_sirali if r['rota'] in dusen_rota_set]
+        digerler = [r for r in bulunan_sirali if r['rota'] not in dusen_rota_set]
+        sirali = dusenler + digerler
+
+        # Rotaları 25'er 25'er gönder (Telegram 4096 karakter limiti)
+        parca = []
+        for r in sirali:
+            rota = r['rota']
+            if rota in dusen_rota_set:
+                d = dusen_rota_bilgi[rota]
+                satir = (
+                    f"📉 `{rota}` — ~~{d['eski']:.0f}~~ → *{r['min_eur']:.0f} EUR* "
+                    f"({r['min_ay']}) ↓{d['dusus']:.0f}€ -%{d['yuzde']:.0f}"
+                )
+            else:
+                satir = f"✈️ `{rota}` — *{r['min_eur']:.0f} EUR* ({r['min_ay']})"
+            parca.append(satir)
+
+            if len(parca) == 25:
+                await bot.send_message(
+                    chat_id=TELEGRAM_CHAT_ID,
+                    text="\n".join(parca),
+                    parse_mode="Markdown"
+                )
+                await asyncio.sleep(0.3)
+                parca = []
+
+        # Kalan rotalar
+        if parca:
+            await bot.send_message(
+                chat_id=TELEGRAM_CHAT_ID,
+                text="\n".join(parca),
+                parse_mode="Markdown"
+            )
+            await asyncio.sleep(0.3)
+
+        # Fiyat bulunamayan rotalar
+        if bulunamayan_rotalar:
+            ozet = f"❌ *Fiyat bulunamayan {len(bulunamayan_rotalar)} rota:*\n"
+            ozet += ", ".join(bulunamayan_rotalar)
+            await bot.send_message(
+                chat_id=TELEGRAM_CHAT_ID,
+                text=ozet,
+                parse_mode="Markdown"
+            )
 
     logger.info(f"Tarama bitti. Bulunan: {len(bulunan_rotalar)}, Düşen: {len(dusen_rotalar)}")
 
