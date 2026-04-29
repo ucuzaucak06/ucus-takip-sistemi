@@ -143,16 +143,17 @@ def bildirim_kaydet(kalkis, varis, yil, ay, eski, yeni):
 # ── SKYSCANNER ────────────────────────────────
 
 def skyscanner_link_olustur(kalkis, varis, yil, ay):
-    """Skyscanner gidiş-dönüş arama linki oluşturur."""
-    # Gidiş tarihi: ayın 1'i, dönüş: 7 gün sonra
-    gidis = f"{str(yil)[2:]}{ay:02d}01"
+    """Skyscanner aylık takvim görünümü — o ayın tüm gidiş-dönüş fiyatlarını gösterir."""
+    import calendar
     donus_ay = ay + 1 if ay < 12 else 1
     donus_yil = yil if ay < 12 else yil + 1
-    donus = f"{str(donus_yil)[2:]}{donus_ay:02d}01"
+    oym = f"{yil}-{ay:02d}"      # outbound month
+    iym = f"{donus_yil}-{donus_ay:02d}"  # inbound month (1 ay sonra)
     return (
         f"https://www.skyscanner.net/transport/flights/"
-        f"{kalkis.lower()}/{varis.lower()}/{gidis}/{donus}/"
-        f"?adults=1&cabinclass=economy"
+        f"{kalkis.lower()}/{varis.lower()}/"
+        f"?adults=1&cabinclass=economy&rtn=1"
+        f"&oym={oym}&iym={iym}"
     )
 
 
