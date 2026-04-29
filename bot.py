@@ -142,6 +142,20 @@ def bildirim_kaydet(kalkis, varis, yil, ay, eski, yeni):
 
 # ── SKYSCANNER ────────────────────────────────
 
+def skyscanner_link_olustur(kalkis, varis, yil, ay):
+    """Skyscanner gidiş-dönüş arama linki oluşturur."""
+    # Gidiş tarihi: ayın 1'i, dönüş: 7 gün sonra
+    gidis = f"{str(yil)[2:]}{ay:02d}01"
+    donus_ay = ay + 1 if ay < 12 else 1
+    donus_yil = yil if ay < 12 else yil + 1
+    donus = f"{str(donus_yil)[2:]}{donus_ay:02d}01"
+    return (
+        f"https://www.skyscanner.net/transport/flights/"
+        f"{kalkis.lower()}/{varis.lower()}/{gidis}/{donus}/"
+        f"?adults=1&cabinclass=economy"
+    )
+
+
 def skyscanner_aylik_ara(kalkis, varis, yil, ay):
     """Tek istekte tüm ayın en ucuz gidiş-dönüş fiyatını çeker."""
     try:
@@ -295,12 +309,17 @@ async def tum_rotalari_tara(bot: Bot):
 
     # 1. Fiyat düşüş bildirimleri (anında)
     for r in dusen_rotalar:
+        kalkis_k, varis_k = r['rota'].split("→")
+        yil_k = int(r['ay'].split("-")[0])
+        ay_k = int(r['ay'].split("-")[1])
+        link = skyscanner_link_olustur(kalkis_k, varis_k, yil_k, ay_k)
         mesaj = (
             f"📉 *FİYAT DÜŞTÜ!*\n\n"
             f"✈️ *{r['rota']}* (Gidiş-Dönüş)\n"
             f"📅 {r['ay']}\n\n"
             f"~~{r['eski']:.0f} EUR~~ → *{r['yeni']:.0f} EUR*\n"
             f"💰 *{r['dusus']:.0f} EUR daha ucuz* (-%{r['yuzde']:.0f})\n\n"
+            f"🔗 [Skyscanner'da Gör]({link})\n\n"
             f"_Kaynak: Skyscanner_"
         )
         await bot.send_message(
@@ -343,14 +362,23 @@ async def tum_rotalari_tara(bot: Bot):
         parca = []
         for r in sirali:
             rota = r['rota']
+            kalkis_k, varis_k = rota.split("→")
+            yil_k = int(r['min_ay'].split("-")[0])
+            ay_k = int(r['min_ay'].split("-")[1])
+            link = skyscanner_link_olustur(kalkis_k, varis_k, yil_k, ay_k)
+
             if rota in dusen_rota_set:
                 d = dusen_rota_bilgi[rota]
                 satir = (
                     f"📉 `{rota}` — ~~{d['eski']:.0f}~~ → *{r['min_eur']:.0f} EUR* "
-                    f"({r['min_ay']}) ↓{d['dusus']:.0f}€ -%{d['yuzde']:.0f}"
+                    f"({r['min_ay']}) ↓{d['dusus']:.0f}€ -%{d['yuzde']:.0f}\n"
+                    f"🔗 [Skyscanner'da Gör]({link})"
                 )
             else:
-                satir = f"✈️ `{rota}` — *{r['min_eur']:.0f} EUR* ({r['min_ay']})"
+                satir = (
+                    f"✈️ `{rota}` — *{r['min_eur']:.0f} EUR* ({r['min_ay']})\n"
+                    f"🔗 [Skyscanner'da Gör]({link})"
+                )
             parca.append(satir)
 
             if len(parca) == 25:
